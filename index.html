@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillForge Assess - Frontend Assessment Engine</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header / Navbar: Contains logo and main navigation -->
+        <header class="app-header">
+            <div class="logo">
+                <!-- SVG Logo: Ensure logo.svg exists in /assets, or adjust as needed -->
+                <img src="assets/web-development.png" alt="SkillForge Assess Logo" class="logo-icon">
+                <h1>SkillForge</h1>
+            </div>
+            <!-- Main Navigation: Links to different sections of the application -->
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#dashboard" class="nav-link active" data-section="dashboard">Dashboard</a></li>
+                    <li><a href="#assessments" class="nav-link" data-section="assessments">Assessments</a></li>
+                    <li><a href="#admin" class="nav-link" data-section="admin">Admin</a></li>
+                    <!-- Future Feature: Profile/User link, if Firebase Auth is integrated -->
+                    <!-- <li><a href="#profile" class="nav-link"><img src="/assets/user-icon.svg" alt="Profile" class="user-icon"></a></li> -->
+                </ul>
+            </nav>
+            <!-- Mobile Navigation Toggle: A placeholder for a hamburger menu on small screens -->
+            <button class="menu-toggle" aria-label="Toggle navigation" hidden>☰</button>
+        </header>
+
+        <!-- Main Content Area: Displays different sections based on navigation -->
+        <main class="app-main-content">
+
+            <!-- Section: Dashboard (Overview of stats and recent activity) -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="card stat-card">
+                        <h3>Total Skills Tracked</h3>
+                        <p id="totalSkillsCount">0</p>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Total Questions</h3>
+                        <p id="totalQuestionsCount">0</p>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Assessments Taken</h3>
+                        <p id="assessmentsTakenCount">0</p>
+                    </div>
+                    <div class="card recent-activity">
+                        <h3>Recent Activity</h3>
+                        <ul id="recentActivityList">
+                            <li>No recent activity to display.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Assessments (Functionality to start and take an assessment) -->
+            <section id="assessments" class="content-section">
+                <div class="section-header">
+                    <h2>Start New Assessment</h2>
+                </div>
+                <div class="card assessment-starter">
+                    <div class="form-group">
+                        <label for="targetSkillsInput">Target Skills (comma-separated IDs):</label>
+                        <input type="text" id="targetSkillsInput" placeholder="e.g., s_js_basics, s_python_basics (leave empty for all skills)" />
+                        <small>Enter skill IDs you want to be assessed on. Leave blank for a general assessment.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxQsInput">Max Questions:</label>
+                        <input type="number" id="maxQsInput" value="10" min="1" max="50" />
+                        <small>Set the maximum number of questions for this assessment.</small>
+                    </div>
+                    <button id="startBtn" class="btn btn-primary">Start Assessment</button>
+                    <div id="assessmentLoading" class="loading-indicator" hidden>
+                        <div class="spinner"></div>
+                        <p>Preparing your assessment...</p>
+                    </div>
+                </div>
+
+                <!-- Assessment Player: Displays questions during an active assessment -->
+                <div id="player" class="card assessment-player" hidden>
+                    <div class="player-header">
+                        <h3 id="questionCounter">Question 0 of 0</h3>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="assessmentProgressBar"></div>
+                        </div>
+                    </div>
+                    <div id="questionContainer" class="question-content">
+                        <!-- Dynamic question content will be injected here by JavaScript -->
+                        <p class="question-text">Loading question...</p>
+                        <div class="options-container">
+                            <!-- Dynamic options/input field will be injected here by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="player-actions">
+                        <button id="nextBtn" class="btn btn-secondary" disabled>Next Question</button>
+                        <button id="submitBtn" class="btn btn-success" hidden>Submit Assessment</button>
+                    </div>
+                </div>
+
+                <!-- Assessment Results: Displays assessment outcome and breakdown -->
+                <div id="results" class="card assessment-results" hidden>
+                    <div class="section-header">
+                        <h3>Assessment Results</h3>
+                        <button class="btn btn-info btn-small" id="toggleRawResults">Toggle Raw JSON</button>
+                    </div>
+                    <div class="results-summary">
+                        <h4>Overall Performance: <span id="overallScore">N/A</span></h4>
+                        <p id="feedbackMessage">Complete an assessment to see feedback here.</p>
+                    </div>
+
+                    <div class="skill-graph-section">
+                        <h4>Skill Proficiency Graph</h4>
+                        <div id="skillGraphContainer" class="skill-graph-svg">
+                            <!-- SVG graph will be rendered here by JavaScript -->
+                            <p class="graph-placeholder">No graph available yet. Complete an assessment.</p>
+                        </div>
+                        <small>Nodes represent skills, colors indicate proficiency (Red: Low, Green: High).</small>
+                    </div>
+
+                    <div class="skill-breakdown-section">
+                        <h4>Skill Breakdown</h4>
+                        <ul id="skillBreakdownList" class="skill-breakdown-list">
+                            <li>No skill breakdown available yet.</li>
+                        </ul>
+                    </div>
+
+                    <div id="rawResults" class="code-block" hidden>
+                        <h4>Raw Data:</h4>
+                        <pre id="resultsJson">{}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Admin Panel (For managing skills and questions) -->
+            <section id="admin" class="content-section">
+                <div class="section-header">
+                    <h2>Admin Panel</h2>
+                </div>
+                <div class="card admin-actions">
+                    <h3>Database Actions</h3>
+                    <div class="btn-group">
+                        <button id="seedBtn" class="btn btn-warning">Seed Sample Data</button>
+                        <!-- 'Clear All Data' button is initially hidden for safety; JS can reveal it -->
+                        <button id="clearDbBtn" class="btn btn-danger" hidden>Clear All Data (Caution!)</button>
+                    </div>
+                    <p id="seedStatus" class="status-message"></p>
+                </div>
+
+                <div class="card admin-forms">
+                    <h3>Manage Skills</h3>
+                    <form id="skillForm">
+                        <input type="hidden" id="skillId" /> <!-- Hidden field for skill ID (for updates) -->
+                        <div class="form-group">
+                            <label for="skillName">Skill Name:</label>
+                            <input type="text" id="skillName" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="skillDescription">Description:</label>
+                            <textarea id="skillDescription" placeholder="Brief description of the skill"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="skillPrerequisites">Prerequisites (comma-separated IDs, e.g., s_js_basics):</label>
+                            <input type="text" id="skillPrerequisites" placeholder="No prerequisites" />
+                        </div>
+                        <div class="form-group">
+                            <label for="skillDifficulty">Difficulty (1-5):</label>
+                            <input type="number" id="skillDifficulty" min="1" max="5" value="1" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add/Update Skill</button>
+                    </form>
+
+                    <h3 class="mt-4">Manage Questions</h3>
+                    <form id="questionForm">
+                        <input type="hidden" id="questionId" /> <!-- Hidden field for question ID (for updates) -->
+                        <div class="form-group">
+                            <label for="questionText">Question Text:</label>
+                            <textarea id="questionText" required placeholder="Type your question here"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="questionType">Question Type:</label>
+                            <select id="questionType">
+                                <option value="mcq">Multiple Choice</option>
+                                <option value="short">Short Answer</option>
+                            </select>
+                        </div>
+                        <!-- MCQ Options Group: Shown when questionType is 'mcq' -->
+                        <div id="mcqOptionsGroup" class="form-group">
+                            <label>MCQ Options (one per line):</label>
+                            <textarea id="mcqOptions" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+                            <label for="mcqCorrectIndex">Correct Option Index (0-based for MCQ):</label>
+                            <input type="number" id="mcqCorrectIndex" value="0" min="0" />
+                        </div>
+                        <!-- Short Answer Group: Shown when questionType is 'short' -->
+                        <div id="shortAnswerGroup" class="form-group" hidden>
+                            <label for="shortAnswerCorrect">Correct Short Answer (case-insensitive match):</label>
+                            <input type="text" id="shortAnswerCorrect" placeholder="Expected answer" />
+                        </div>
+                        <div class="form-group">
+                            <label for="questionSkillTags">Skill Tags (format: skillId:weight, comma-separated):</label>
+                            <input type="text" id="questionSkillTags" required placeholder="e.g., s_js_basics:1.0, s_dom:0.5" />
+                            <small>Associate skills and their importance (weight 0.1-1.0) to this question.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="estimatedTime">Estimated Time (seconds):</label>
+                            <input type="number" id="estimatedTime" value="30" min="5" max="300" required />
+                            <small>Recommended time to answer this question.</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add/Update Question</button>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Local JavaScript Modules -->
+    <!-- Order matters due to dependencies: init -> db -> algorithms -> ui -> app -->
+    <script type="module" src="js/firebase-init.js"></script>
+    <script type="module" src="js/db.js"></script>
+    <script type="module" src="js/algorithms.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
