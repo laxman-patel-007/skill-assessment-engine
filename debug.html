@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Assessment Engine</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .data-display { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Assessment Engine Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>Data Status</h2>
+        <button onclick="checkData()">Check Data Status</button>
+        <button onclick="seedData()">Seed Sample Data</button>
+        <button onclick="clearData()">Clear All Data</button>
+        <div id="dataStatus" class="data-display"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Question Selection Test</h2>
+        <button onclick="testQuestionSelection()">Test Question Selection</button>
+        <div id="questionTest" class="data-display"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>LocalStorage Contents</h2>
+        <button onclick="showLocalStorage()">Show LocalStorage</button>
+        <div id="localStorageContent" class="data-display"></div>
+    </div>
+
+    <script type="module">
+        import { getSkills, getQuestions, seedSampleData, clearAllData } from './js/db.js';
+        import { selectQuestionsForAssessment } from './js/algorithms.js';
+
+        window.checkData = async function() {
+            const statusDiv = document.getElementById('dataStatus');
+            try {
+                const skills = await getSkills();
+                const questions = await getQuestions();
+                
+                statusDiv.innerHTML = `
+                    <div class="success">✓ Data loaded successfully</div>
+                    <div>Skills: ${skills.length}</div>
+                    <div>Questions: ${questions.length}</div>
+                    <div>Sample Skills: ${skills.slice(0, 3).map(s => s.name).join(', ')}</div>
+                    <div>Sample Questions: ${questions.slice(0, 3).map(q => q.text.substring(0, 50) + '...').join('<br>')}</div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">✗ Error loading data: ${error.message}</div>`;
+            }
+        };
+
+        window.seedData = async function() {
+            const statusDiv = document.getElementById('dataStatus');
+            try {
+                await seedSampleData();
+                statusDiv.innerHTML = '<div class="success">✓ Sample data seeded successfully!</div>';
+                setTimeout(checkData, 1000);
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">✗ Error seeding data: ${error.message}</div>`;
+            }
+        };
+
+        window.clearData = async function() {
+            const statusDiv = document.getElementById('dataStatus');
+            try {
+                await clearAllData();
+                statusDiv.innerHTML = '<div class="success">✓ All data cleared!</div>';
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">✗ Error clearing data: ${error.message}</div>`;
+            }
+        };
+
+        window.testQuestionSelection = async function() {
+            const testDiv = document.getElementById('questionTest');
+            try {
+                const skills = await getSkills();
+                const questions = await getQuestions();
+                
+                // Test 1: No target skills (should get all questions)
+                const allQuestions = selectQuestionsForAssessment(questions, skills, [], 10);
+                
+                // Test 2: With target skills
+                const jsQuestions = selectQuestionsForAssessment(questions, skills, ['s_js_basics'], 5);
+                
+                // Test 3: With multiple target skills
+                const multiSkillQuestions = selectQuestionsForAssessment(questions, skills, ['s_js_basics', 's_python_basics'], 8);
+                
+                testDiv.innerHTML = `
+                    <div class="success">✓ Question selection tests completed</div>
+                    <div><strong>Test 1 (No target skills, max 10):</strong> ${allQuestions.length} questions selected</div>
+                    <div><strong>Test 2 (JavaScript only, max 5):</strong> ${jsQuestions.length} questions selected</div>
+                    <div><strong>Test 3 (JS + Python, max 8):</strong> ${multiSkillQuestions.length} questions selected</div>
+                    <div><strong>Sample selected questions:</strong></div>
+                    <div>${allQuestions.slice(0, 3).map(q => `${q.id}: ${q.text.substring(0, 60)}...`).join('<br>')}</div>
+                `;
+            } catch (error) {
+                testDiv.innerHTML = `<div class="error">✗ Error testing question selection: ${error.message}</div>`;
+            }
+        };
+
+        window.showLocalStorage = function() {
+            const contentDiv = document.getElementById('localStorageContent');
+            const skills = localStorage.getItem('firestore_skills');
+            const questions = localStorage.getItem('firestore_questions');
+            const assessments = localStorage.getItem('firestore_assessments');
+            
+            contentDiv.innerHTML = `
+                <div><strong>Skills:</strong> ${skills ? JSON.parse(skills).length + ' items' : 'Not found'}</div>
+                <div><strong>Questions:</strong> ${questions ? JSON.parse(questions).length + ' items' : 'Not found'}</div>
+                <div><strong>Assessments:</strong> ${assessments ? JSON.parse(assessments).length + ' items' : 'Not found'}</div>
+                <div><strong>Sample Skills:</strong> ${skills ? JSON.parse(skills).slice(0, 3).map(s => s.name).join(', ') : 'N/A'}</div>
+            `;
+        };
+
+        // Auto-check data on load
+        checkData();
+    </script>
+</body>
+</html>
